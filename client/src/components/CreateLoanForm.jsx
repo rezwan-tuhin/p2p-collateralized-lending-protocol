@@ -79,7 +79,7 @@ export const CreateLoanForm = () => {
             type="text"
             placeholder="0.05"
             value={interest}
-            onChange={() => setInterest(e.target.value)}
+            onChange={(e) => setInterest(e.target.value)}
             className="w-full mt-1 px-3 py-2 border rounded-lg text-sm outline-none focus:border-indigo-500"
             required
           />

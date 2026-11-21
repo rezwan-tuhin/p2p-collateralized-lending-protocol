@@ -124,11 +124,17 @@ export const LoanProvider = ({children}) => {
 
   const createLoan = async ({nftAddress, tokenId, amount, interest, durationDays}) => {
     if(!signer) return;
+    const nftContract = new ethers.Contract(TEST_NFT_ADDRESS, TEST_NFT_ABI, signer);
     const lendingContract = new ethers.Contract(LENDING_PROTOCOL_ADDRESS, LENDING_PROTOCOL_ABI, signer);
     try{
       setLoading(true);
+
+      const approveTx = await nftContract.approve(LENDING_PROTOCOL_ADDRESS, tokenId);
+      await approveTx.wait();
+
+
       const tx = await lendingContract.createLoan(nftAddress, tokenId, ethers.parseEther(amount), ethers.parseEther(interest), BigInt(durationDays) * 86400n);
-      tx.wait();
+      await tx.wait();
       alert('Loan created');
       fetchLoans();
     }catch(err){
@@ -203,7 +209,20 @@ export const LoanProvider = ({children}) => {
       setLoading(true);
       const nftContract  = new ethers.Contract(TEST_NFT_ADDRESS, TEST_NFT_ABI, signer);
       const tx = await nftContract.makeNft(account);
-      await tx.wait();
+      const receipt =  await tx.wait();
+
+      const transferEvent = receipt.logs.map((log) => {
+        try{
+          return nftContract.interface.parseLog(log);
+        }catch{
+          return null;
+        }
+      }).find((event) => event && event.name === 'Transfer');
+      if(transferEvent) {
+        const mintedId = transferEvent.args.tokenId.toString();
+        setLastMintedId(mintedId);
+        alert(`NFT mint successful, Token ID: # ${mintedId}`);
+      }
      }catch(err) {
       console.error(err);
      }finally{
@@ -213,7 +232,7 @@ export const LoanProvider = ({children}) => {
 
 
   return(
-    <LoanContext.Provider value={{loans, account, loading, lastMintedId, fundLoan, repayLoan, cancelLoan, liquidate, mintNft}}>
+    <LoanContext.Provider value={{loans, account, loading, lastMintedId, createLoan, fundLoan, repayLoan, cancelLoan, liquidate, mintNft}}>
       {children}
     </LoanContext.Provider>
   )
