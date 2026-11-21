@@ -9,10 +9,10 @@ export default function App() {
     <LoanProvider>
       <div className="min-h-screen bg-slate-50 text-slate-800">
         <Navbar />
-        {/* <main className="max-w-6xl mx-auto p-6 space-y-6">
+        <main className="max-w-6xl mx-auto p-6 space-y-6">
           <CreateLoanForm />
           <LoanTable />
-        </main> */}
+        </main>
       </div>
     </LoanProvider>
 

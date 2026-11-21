@@ -15,7 +15,7 @@ export const LoanTable = () => {
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
         <h2 className="text-base font-semibold text-slate-900">Loan Marketplace</h2>
-        <span className="text-xs text-slate-500">{loans.length} Total Records</span>
+        <span className="text-xs text-slate-500">{loans?.length} Total Records</span>
       </div>
 
       <div className="overflow-x-auto">
@@ -37,12 +37,12 @@ export const LoanTable = () => {
               <tr>
                 <td colSpan="8" className="text-center py-6 text-slate-400">Loading data...</td>
               </tr>
-            ) : loans.length === 0 ? (
+            ) : loans?.length === 0 ? (
               <tr>
                 <td colSpan="8" className="text-center py-6 text-slate-400">No active loans found.</td>
               </tr>
             ) : (
-              loans.map((loan) => {
+              loans?.map((loan) => {
                 const totalDue = (
                   parseFloat(loan.loanAmount) + parseFloat(loan.interestAmount)
                 ).toFixed(3);

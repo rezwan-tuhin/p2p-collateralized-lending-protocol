@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, Children, useCallback } from "react";
 import { ethers } from "ethers";
 
-import {TEST_NFT_ADDRESS, LENDING_PROTOCOL_ADDRESS, TEST_NFT_ABI, LENDING_PROTOCOL_ABI} from '../constants/constant.json';
+import {TEST_NFT_ADDRESS, LENDING_PROTOCOL_ADDRESS, TEST_NFT_ABI, LENDING_PROTOCOL_ABI} from '../constants/constant';
 
 const LoanContext = createContext();
 
@@ -89,7 +89,7 @@ export const LoanProvider = ({children}) => {
         setLoans([]);
       }
 
-      const loanPromises = Array.from({length: count}, (_, i) => lendingContract.lonas(i));
+      const loanPromises = Array.from({length: count}, (_, i) => lendingContract.loans(i));
 
       const rawLoans = await Promise.all(loanPromises);
 
@@ -122,34 +122,98 @@ export const LoanProvider = ({children}) => {
   }, [provider, fetchLoans])
 
 
-  const createLoan = async ({}) => {
+  const createLoan = async ({nftAddress, tokenId, amount, interest, durationDays}) => {
     if(!signer) return;
     const lendingContract = new ethers.Contract(LENDING_PROTOCOL_ADDRESS, LENDING_PROTOCOL_ABI, signer);
     try{
-      const tx = await lendingContract.createLoan()
+      setLoading(true);
+      const tx = await lendingContract.createLoan(nftAddress, tokenId, ethers.parseEther(amount), ethers.parseEther(interest), BigInt(durationDays) * 86400n);
       tx.wait();
-    }catch{
-
+      alert('Loan created');
+      fetchLoans();
+    }catch(err){
+      console.error(err);
+    }finally{
+      setLoading(false);
     }
   }
 
   const fundLoan = async (loanId) => {
-    if(!signer) return;
-    const lendingContract = new ethers.Contract(LENDING_PROTOCOL_ADDRESS, LENDING_PROTOCOL_ABI, singer);
+    if(!signer) return alert('Please connect metamask first');
+    const lendingContract = new ethers.Contract(LENDING_PROTOCOL_ADDRESS, LENDING_PROTOCOL_ABI, signer);
     try{
-      const tx =  await lendingContract.fundLoan(loanId, {value: ethers.parseEther(totalDue)})
-    }catch{
-
+      setLoading(true);
+      const targetLoan = loans.find((loan) => loan.loanId === loanId);
+      const tx =  await lendingContract.fundLoan(loanId, {value: ethers.parseEther(targetLoan.amount)})
+    }catch(err){
+      console.error(err);
+    }finally{
+      setLoading(false);
     }
   }
 
   const repayLoan = async (loanId) => {
+    if(!signer) return alert("Please connect metamask first");
 
+    try{
+      setLoading(true);
+      const targetLoan = loans.find((loan) => loan.loanId === loanId);
+      const totalDue = parseFloat(targetLoan.amount) + parseFloat(targetLoan.interestAmount);
+      const lendingContract = new ethers.Contract(LENDING_PROTOCOL_ADDRESS, LENDING_PROTOCOL_ABI, signer);
+      
+      const tx = await lendingContract.repayLoan(loanId, {value: ethers.parseEther(totalDue.toFixed(18))});
+    }catch(err) {
+      console.error(err);
+    }finally{
+      setLoading(false);
+    }
+  }
+
+  const liquidate = async (loanId) => {
+    if(!signer) return alert("please install metamask first");
+
+    try{
+      const lendingContract = new ethers.Contract(LENDING_PROTOCOL_ADDRESS, LENDING_PROTOCOL_ABI, signer);
+      const tx = await lendingContract.liquidate(loanId);
+      await tx.wait();
+      alert("loan liquidated");
+    }catch(err) {
+      console.error(err);
+    }
+  }
+
+  const cancelLoan = async (loanId) => {
+    if(!signer) return alert("please install metamask first");
+
+    try{
+      const lendingContract = new ethers.Contract(LENDING_PROTOCOL_ADDRESS, LENDING_PROTOCOL_ABI, signer);
+
+      const tx = await lendingContract.cancelLoan(loanId);
+      await tx.wait();
+      alert("loan cancelled");
+    }catch(err) {
+      console.error(err);
+    }
+  }
+
+  const mintNft = async () => {
+    if(!signer) return alert("please install metamask");
+    
+     try{
+      setLoading(true);
+      const nftContract  = new ethers.Contract(TEST_NFT_ADDRESS, TEST_NFT_ABI, signer);
+      const tx = await nftContract.makeNft(account);
+      await tx.wait();
+     }catch(err) {
+      console.error(err);
+     }finally{
+      setLoading(false);
+     }
   }
 
 
   return(
-    <LoanContext.Provider value={{loans, account, loading, lastMintedId}}>
+    <LoanContext.Provider value={{loans, account, loading, lastMintedId, fundLoan, repayLoan, cancelLoan, liquidate, mintNft}}>
       {children}
     </LoanContext.Provider>
   )
