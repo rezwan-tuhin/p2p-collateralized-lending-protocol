@@ -40,7 +40,7 @@ function saveConstants(testNftAddress, lendingProtocolAddress) {
     const contractData = `
     
     export const TEST_NFT_ADDRESS = "${testNftAddress}";
-    export const LENDING_PROTOCOL_ADDRESS = ${lendingProtocolAddress};
+    export const LENDING_PROTOCOL_ADDRESS = "${lendingProtocolAddress}";
 
     export const TEST_NFT_ABI = ${JSON.stringify(testNftAbi, null, 2)};
     export const LENDING_PROTOCOL_ABI = ${JSON.stringify(lendingProtocolAbi, null, 2)};
